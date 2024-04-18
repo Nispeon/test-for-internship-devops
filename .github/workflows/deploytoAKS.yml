@@ -67,15 +67,3 @@ jobs:
           deployment.yml
         images: 'haroldregistry.azurecr.io/hello-world-azure-app:${{github.sha}}'
         action: deploy
-        
-
-      # Deploy to k8s cluster
-    # - name: 'Run kubectl apply'
-    #   run: |
-    #       sed -i 's/latest/${{github.sha}}/g' deployment.yml
-    #       kubectl apply -f deployment.yml
-    #       kubectl apply -f service.yml
-        
-    
-        
-    
