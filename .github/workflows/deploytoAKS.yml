@@ -6,90 +6,75 @@ name: AKS Deployment
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
+
+permissions:
+    id-token: write
+    contents: read
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
+    environment: dev
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+          client-id: 37f5ae9e-f37d-4796-b4fc-e955e158a7dc
+          tenant-id: 68f20712-97ee-403b-bef8-d5befb82cc25
+          subscription-id: 1f3accf1-2e7e-48d6-951c-c5fced65e1f8
+
     - name: Setup .NET Core SDK
-      uses: actions/setup-dotnet@v1.5.0
+      uses: actions/setup-dotnet@v4
       with:
         # SDK version to use. Examples: 2.2.104, 3.1, 3.1.x
         dotnet-version: 3.1.x
         # Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword
     - name: dotnet build
       run: dotnet build -c release
-    
+  
     - name: docker build
-      run: docker  -t test-for-internship:'${{github.sha}}' 
-    
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
-     .
+      run: docker build -t haroldregistry.azurecr.io/hello-world-azure-app:'${{github.sha}}' .
+  
+    - name: Set subscription
+      run: az account set --subscription 1f3accf1-2e7e-48d6-951c-c5fced65e1f8
 
+    - name: Login to Azure registry
+      run: az acr login --name haroldregistry
+    
+    - name: docker push image
+      run: docker push haroldregistry.azurecr.io/hello-world-azure-app:'${{github.sha}}'
  
     - name: Azure Kubernetes set context
-      uses: Azure/aks-set-context@v1
+      uses: azure/aks-set-context@v3
       with:
-        # Azure credentials i.e. output of `az ad sp create-for-rbac --sdk-auth`
-        creds: '${{secrets. ...... }}'
-        # Resource Group Name
-        resource-group: name-aks-rg
-        # AKS Cluster Name
-        cluster-name: name-aks-cluster
-
-  # Create K8s secrets to pull images
-    - name: Create secret in Kubernetes cluster
-      uses: Azure/k8s-create-secret@v1.1
+        resource-group: cloud-shell-storage-westeurope
+        cluster-name: azure-course
+    
+    - uses: azure/k8s-deploy@v1
       with:
-        # Container registry url
-        container-registry-url: .....
-        # Container registry username
-        container-registry-username: '${{secrets. ...... }}'
-        # Container registry password
-        container-registry-password:  '${{secrets.   ...... }}'
-        # Type of Kubernetes secret. For example, docker-registry or generic
-        secret-type: ........
-        # Name of the secret. You can use this secret name in the Kubernetes YAML configuration file.
-        secret-name: docker-image-pull-secret
-        
-      # Deploy to k8s cluster
-    - name: Deploy to Kubernetes cluster
-      uses: Azure/k8s-deploy@v1
-      with:        
-        # Path to the manifest files which will be used for deployment.
+        namespace: workspace-bakabruh-2001
         manifests: |
-          k8s/deployment.yml
-          k8s/service.yml
-        # Fully qualified resource URL of the image(s) to be used for substitutions on the manifest files Example: contosodemo.azurecr.io/helloworld:test
-        images: '${{secrets.   ...... }}/  .......  :${{github.sha}}'
-        # Name of a docker-registry secret that has already been set up within the cluster. Each of these secret names are added under imagePullSecrets field for the workloads found in the input manifest files
-        imagepullsecrets: docker-image-pull-secret
-        # deploy/promote/reject
+          deployment.yml
+        images: 'haroldregistry.azurecr.io/hello-world-azure-app:${{github.sha}}'
         action: deploy
+        
+
+      # Deploy to k8s cluster
+    # - name: 'Run kubectl apply'
+    #   run: |
+    #       sed -i 's/latest/${{github.sha}}/g' deployment.yml
+    #       kubectl apply -f deployment.yml
+    #       kubectl apply -f service.yml
         
     
         
