@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-deployment
+  namespace: workspace-nispeon-2001
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+        - name: hello-world-container
+          image: haroldregistry.azurecr.io/hello-world-azure-app:latest
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always
