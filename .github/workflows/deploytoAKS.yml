@@ -62,7 +62,7 @@ jobs:
     
     - uses: azure/k8s-deploy@v1
       with:
-        namespace: workspace-bakabruh-2001
+        namespace: workspace-nispeon-2001
         manifests: |
           deployment.yml
         images: 'haroldregistry.azurecr.io/hello-world-azure-app:${{github.sha}}'
